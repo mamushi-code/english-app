@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>ハヤト英語アプリ</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans',sans-serif;background:#f0ede8;color:#1a1a1a;min-height:100vh;}
+#app{max-width:500px;margin:0 auto;padding:1rem;}
+.screen{display:none;}
+.screen.active{display:block;}
+
+/* TOP BAR */
+.top-bar{display:flex;align-items:center;gap:10px;margin-bottom:1.25rem;}
+.top-bar h2{font-size:18px;font-weight:700;color:#1a1a1a;flex:1;}
+.back-btn{background:none;border:none;cursor:pointer;font-size:24px;color:#666;padding:4px;line-height:1;}
+
+/* HOME */
+.home-hd{margin-bottom:1.5rem;}
+.home-hd .greeting{font-size:13px;color:#888;margin-bottom:2px;}
+.home-hd .title{font-size:24px;font-weight:800;color:#1a1a1a;}
+.stats-row{display:flex;gap:8px;margin-bottom:1.5rem;}
+.stat{flex:1;background:#fff;border-radius:14px;padding:14px 10px;text-align:center;border:1px solid #e0ddd8;}
+.stat .num{font-size:26px;font-weight:800;color:#1a1a1a;}
+.stat .lbl{font-size:11px;color:#999;margin-top:2px;}
+.section-title{font-size:13px;font-weight:700;color:#888;letter-spacing:0.05em;margin-bottom:10px;text-transform:uppercase;}
+.cat-tabs{display:flex;gap:6px;margin-bottom:12px;overflow-x:auto;padding-bottom:2px;}
+.cat-tab{padding:6px 14px;border-radius:20px;font-size:13px;font-weight:600;cursor:pointer;border:none;white-space:nowrap;}
+.cat-tab.active{background:#1a1a1a;color:#fff;}
+.cat-tab:not(.active){background:#fff;color:#666;border:1px solid #e0ddd8;}
+.scenario-list{display:flex;flex-direction:column;gap:8px;}
+.scenario-card{background:#fff;border:1px solid #e0ddd8;border-radius:16px;padding:14px 16px;cursor:pointer;display:flex;align-items:center;gap:12px;transition:transform 0.1s;}
+.scenario-card:active{transform:scale(0.98);}
+.sc-icon{font-size:32px;flex-shrink:0;}
+.sc-text{flex:1;}
+.sc-title{font-size:15px;font-weight:700;color:#1a1a1a;}
+.sc-sub{font-size:12px;color:#999;margin-top:2px;}
+.sc-badge{font-size:10px;font-weight:700;padding:3px 8px;border-radius:8px;flex-shrink:0;}
+.sc-badge.travel{background:#e8f0fe;color:#1a56db;}
+.sc-badge.daily{background:#e6f4ea;color:#1e7e34;}
+.sc-badge.tv{background:#fce8e6;color:#c5221f;}
+.sc-badge.golf{background:#fff8e1;color:#b06000;}
+.sc-done{font-size:18px;flex-shrink:0;}
+
+/* SCENARIO DETAIL */
+.scene-banner{background:#fff;border:1px solid #e0ddd8;border-radius:16px;padding:16px;margin-bottom:1rem;}
+.scene-situation{font-size:13px;color:#888;margin-bottom:6px;font-weight:600;}
+.scene-desc{font-size:15px;color:#1a1a1a;line-height:1.7;}
+.scene-goal{margin-top:10px;padding:10px 12px;background:#f0ede8;border-radius:10px;font-size:13px;color:#555;line-height:1.6;}
+
+.step-indicator{display:flex;align-items:center;gap:6px;margin-bottom:1rem;}
+.step-dot{width:10px;height:10px;border-radius:50%;background:#e0ddd8;flex-shrink:0;}
+.step-dot.active{background:#1a1a1a;}
+.step-dot.done{background:#34a853;}
+.step-label{font-size:12px;color:#aaa;margin-left:4px;}
+
+/* PHRASE CARD */
+.phrase-card{background:#fff;border:1px solid #e0ddd8;border-radius:20px;padding:20px;margin-bottom:1rem;text-align:center;}
+.ph-situation{font-size:12px;color:#888;margin-bottom:8px;line-height:1.5;}
+.ph-en{font-size:22px;font-weight:800;color:#1a1a1a;margin-bottom:6px;line-height:1.4;}
+.ph-ja{font-size:15px;color:#555;margin-bottom:10px;}
+.ph-ex{font-size:13px;color:#999;font-style:italic;line-height:1.6;background:#f8f7f5;border-radius:10px;padding:10px;}
+
+/* RESULT DISPLAY - big and clear */
+.result-display{border-radius:16px;padding:20px;text-align:center;margin-bottom:1rem;}
+.result-display.correct{background:#34a853;color:#fff;}
+.result-display.wrong{background:#ea4335;color:#fff;}
+.result-display.partial{background:#fbbc04;color:#1a1a1a;}
+.result-display .result-icon{font-size:48px;margin-bottom:8px;}
+.result-display .result-text{font-size:18px;font-weight:800;}
+.result-display .result-said{font-size:13px;margin-top:6px;opacity:0.85;}
+.result-display .result-answer{font-size:14px;margin-top:4px;opacity:0.9;font-weight:600;}
+
+/* MIC AREA */
+.mic-area{text-align:center;margin-bottom:1.25rem;}
+.mic-main{width:88px;height:88px;border-radius:50%;border:none;cursor:pointer;font-size:36px;display:inline-flex;align-items:center;justify-content:center;transition:transform 0.1s;}
+.mic-main.idle{background:#fff;border:2px solid #e0ddd8;color:#555;}
+.mic-main.listening{background:#ea4335;color:#fff;animation:pulse 1s infinite;}
+.mic-main.done{background:#34a853;color:#fff;}
+@keyframes pulse{0%,100%{transform:scale(1);}50%{transform:scale(1.1);}}
+.mic-hint{font-size:12px;color:#aaa;margin-top:8px;}
+.mic-status{font-size:14px;font-weight:600;color:#555;margin-top:8px;min-height:22px;}
+
+/* BUTTONS */
+.btn-row{display:flex;gap:8px;margin-bottom:1rem;}
+.btn{flex:1;padding:14px;border-radius:14px;border:none;font-size:15px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;}
+.btn-primary{background:#1a1a1a;color:#fff;}
+.btn-secondary{background:#fff;color:#1a1a1a;border:1px solid #e0ddd8;}
+.btn-ok{background:#34a853;color:#fff;}
+.btn-ng{background:#ea4335;color:#fff;}
+.btn-skip{background:#f0ede8;color:#666;}
+.btn-audio{background:#fff;color:#1a73e8;border:1px solid #e0ddd8;font-size:14px;padding:10px 14px;border-radius:12px;cursor:pointer;flex:none;}
+
+.tts-row{display:flex;gap:8px;justify-content:center;margin-bottom:1rem;flex-wrap:wrap;}
+
+/* CHAT */
+.chat-scene-box{background:#fff;border:1px solid #e0ddd8;border-radius:14px;padding:12px 14px;margin-bottom:1rem;font-size:13px;color:#555;line-height:1.6;}
+.chat-history{min-height:260px;max-height:340px;overflow-y:auto;margin-bottom:1rem;display:flex;flex-direction:column;gap:10px;}
+.msg{max-width:88%;padding:12px 14px;border-radius:18px;font-size:15px;line-height:1.6;}
+.msg.ai{background:#fff;border:1px solid #e0ddd8;align-self:flex-start;border-bottom-left-radius:4px;}
+.msg.user{background:#1a1a1a;color:#fff;align-self:flex-end;border-bottom-right-radius:4px;}
+.msg.tip{background:#fff8e1;border:1px solid #fbbc04;align-self:flex-start;font-size:13px;color:#555;}
+.chat-input-area{display:flex;gap:8px;align-items:center;}
+.chat-input-area input{flex:1;padding:12px 14px;border:1px solid #ddd;border-radius:14px;font-size:15px;background:#fff;color:#1a1a1a;outline:none;}
+.chat-input-area input:focus{border-color:#1a1a1a;}
+.mic-sm{width:48px;height:48px;border-radius:50%;border:none;cursor:pointer;font-size:20px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;}
+.mic-sm.idle{background:#f0f0f0;color:#555;}
+.mic-sm.listening{background:#ea4335;color:#fff;animation:pulse 1s infinite;}
+.send-btn{width:48px;height:48px;border-radius:50%;border:none;background:#1a1a1a;color:#fff;font-size:20px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;}
+.chat-status{font-size:12px;color:#aaa;text-align:center;margin-top:6px;min-height:18px;}
+
+/* COMPLETE */
+.complete-box{background:#fff;border:1px solid #e0ddd8;border-radius:20px;padding:2rem;text-align:center;margin-bottom:1rem;}
+.complete-icon{font-size:56px;margin-bottom:12px;}
+.complete-title{font-size:22px;font-weight:800;margin-bottom:6px;}
+.complete-sub{font-size:14px;color:#888;margin-bottom:1.5rem;line-height:1.6;}
+
+/* API SETUP */
+.api-box{background:#fff;border:1px solid #e0ddd8;border-radius:16px;padding:1.5rem;margin-bottom:1rem;}
+.api-box h3{font-size:16px;font-weight:700;margin-bottom:8px;}
+.api-box p{font-size:13px;color:#666;line-height:1.6;margin-bottom:12px;}
+.api-box input{width:100%;padding:12px;border:1px solid #ddd;border-radius:10px;font-size:14px;margin-bottom:10px;}
+.api-box .save-btn{width:100%;padding:13px;border:none;border-radius:12px;background:#1a1a1a;color:#fff;font-size:15px;font-weight:700;cursor:pointer;}
+
+/* PROGRESS BAR */
+.prog-bar{height:6px;background:#e0ddd8;border-radius:3px;margin-bottom:6px;}
+.prog-fill{height:100%;background:#1a1a1a;border-radius:3px;transition:width 0.3s;}
+.prog-label{font-size:12px;color:#aaa;margin-bottom:1rem;}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- HOME -->
+<div id="home" class="screen active">
+  <div class="home-hd">
+    <div class="greeting">ハヤト専用</div>
+    <div class="title">英語学習アプリ</div>
+  </div>
+  <div class="stats-row">
+    <div class="stat"><div class="num" id="h-done">0</div><div class="lbl">完了シナリオ</div></div>
+    <div class="stat"><div class="num" id="h-phrases">0</div><div class="lbl">習得フレーズ</div></div>
+    <div class="stat"><div class="num" id="h-streak">0</div><div class="lbl">連続日数</div></div>
+  </div>
+  <div class="section-title">シナリオを選ぶ</div>
+  <div class="cat-tabs">
+    <div class="cat-tab active" onclick="filterCat(this,'all')">すべて</div>
+    <div class="cat-tab" onclick="filterCat(this,'travel')">✈️ 旅行</div>
+    <div class="cat-tab" onclick="filterCat(this,'daily')">☀️ 日常</div>
+    <div class="cat-tab" onclick="filterCat(this,'tv')">🎬 TV制作</div>
+    <div class="cat-tab" onclick="filterCat(this,'golf')">⛳ ゴルフ</div>
+  </div>
+  <div class="scenario-list" id="scenario-list"></div>
+</div>
+
+<!-- SCENARIO DETAIL -->
+<div id="detail" class="screen">
+  <div class="top-bar">
+    <button class="back-btn" onclick="go('home')">←</button>
+    <h2 id="detail-title"></h2>
+  </div>
+  <div class="scene-banner">
+    <div class="scene-situation" id="detail-situation"></div>
+    <div class="scene-desc" id="detail-desc"></div>
+    <div class="scene-goal" id="detail-goal"></div>
+  </div>
+  <div class="step-indicator" id="step-indicator"></div>
+  <div id="step-content"></div>
+</div>
+
+</div>
+
+<script>
+// ========== SCENARIOS ==========
+const SCENARIOS = [
+  {
+    id:'s01', cat:'travel', icon:'✈️',
+    title:'空港チェックイン', sub:'フライト前の手続き',
+    situation:'📍 場面: 成田空港のカウンター',
+    desc:'あなたは海外ロケに向かう途中。カウンターでチェックインしようとしたら、荷物が重量オーバーと言われた。',
+    goal:'💡 目標: 状況を説明し、追加料金の交渉や荷物の調整を英語で乗り切ろう',
+    phrases:[
+      {en:"I'd like to check in for my flight to Los Angeles.", ja:"ロサンゼルス行きのチェックインをお願いします。", note:"チェックイン時の基本フレーズ。to の後に目的地を入れるだけで使える。"},
+      {en:"I'm afraid my bag is a bit overweight.", ja:"荷物が少し重量オーバーのようです。", note:"I'm afraid は「申し訳ないけど」という丁寧な前置き。問題を伝えるときに便利。"},
+      {en:"Is there any way you could make an exception?", ja:"なんとか融通してもらえませんか？", note:"Is there any way...? は「なんとかなりませんか？」と丁寧にお願いする最強フレーズ。"},
+      {en:"Could I move some items to my carry-on?", ja:"いくつか機内持ち込みに移してもいいですか？", note:"carry-on は機内持ち込み荷物。checked baggage は預け荷物。"},
+      {en:"What's the excess baggage fee?", ja:"超過手荷物の料金はいくらですか？", note:"excess baggage fee で「超過料金」。fee は手数料全般に使える。"},
+    ],
+    chatSys:'You are an airline check-in agent at Narita Airport. The user is a Japanese TV producer checking in for an international flight. Their bag is overweight. Be realistic but helpful. Keep responses short (2-3 sentences). After each response add one tip in Japanese starting with 💡.',
+    chatStart:"Good morning! May I see your passport and booking reference, please?"
+  },
+  {
+    id:'s02', cat:'travel', icon:'🏨',
+    title:'ホテルのトラブル', sub:'予約と部屋の問題',
+    situation:'📍 場面: ニューヨークのホテル フロント',
+    desc:'予約した部屋がダブルブッキングで取れないと言われた。しかも翌日は早朝から仕事がある。なんとかしてもらわないと困る。',
+    goal:'💡 目標: 問題を明確に伝え、代替案を求める交渉英語を身につけよう',
+    phrases:[
+      {en:"I have a reservation under the name Hayato.", ja:"ハヤトという名前で予約しています。", note:"under the name は「〜という名前で」。ホテルや飲食店で超頻出。"},
+      {en:"I'm sorry, but that's not acceptable.", ja:"申し訳ないですが、それは困ります。", note:"丁寧だが意思をはっきり伝えるフレーズ。I'm sorry で柔らかくしながら主張できる。"},
+      {en:"What can you do to fix this situation?", ja:"この状況をどうしてもらえますか？", note:"fix this situation で「この問題を解決する」。責めずに解決策を求める言い方。"},
+      {en:"I need to be up early tomorrow for work.", ja:"明日は仕事で早起きしなければなりません。", note:"理由を添えると相手の共感を得やすい。"},
+      {en:"Could you upgrade me at no extra charge?", ja:"追加料金なしでアップグレードしてもらえますか？", note:"at no extra charge で「追加料金なしで」。交渉の鉄板フレーズ。"},
+    ],
+    chatSys:'You are a hotel front desk agent in New York. The user is a Japanese TV producer whose reservation has a problem (double booking). Be apologetic but try to resolve it. Keep responses short. After each response add one tip in Japanese starting with 💡.',
+    chatStart:"Welcome to the Grand Hotel. How may I assist you this evening?"
+  },
+  {
+    id:'s03', cat:'travel', icon:'🍽️',
+    title:'レストランで注文', sub:'食事制限・アレルギー対応',
+    situation:'📍 場面: ロサンゼルスのレストラン',
+    desc:'同行するタレントが食物アレルギー持ち。メニューを見ながら、アレルギー対応を確認して注文しなければならない。',
+    goal:'💡 目標: アレルギーや食事制限を英語で正確に伝えられるようにしよう',
+    phrases:[
+      {en:"Does this dish contain any nuts?", ja:"この料理にナッツは入っていますか？", note:"contain は「含む」。アレルギー確認の基本。nuts/gluten/dairy など入れ替えて使える。"},
+      {en:"We have someone in our party with a severe allergy.", ja:"同行者に重篤なアレルギーがあります。", note:"in our party で「一行の中に」。severe（重篤な）を加えると真剣さが伝わる。"},
+      {en:"Can the chef make this without shellfish?", ja:"シェフにこれを貝類なしで作ってもらえますか？", note:"Can the chef make this without...? は「〜なしで作れますか？」の便利パターン。"},
+      {en:"I'll have the salmon, medium rare please.", ja:"サーモンをミディアムレアでお願いします。", note:"I'll have は注文の定番。焼き加減: rare/medium rare/medium/well done。"},
+      {en:"Could we get separate checks?", ja:"別々に会計にしてもらえますか？", note:"separate checks で割り勘。split the bill も同じ意味でよく使う。"},
+    ],
+    chatSys:'You are a waiter at a nice restaurant in Los Angeles. The user is a Japanese TV producer dining with a colleague who has a nut allergy. Be helpful and knowledgeable about the menu. Keep responses short. After each response add one tip in Japanese starting with 💡.',
+    chatStart:"Good evening! Welcome. Can I start you off with some drinks tonight?"
+  },
+  {
+    id:'s04', cat:'travel', icon:'🚕',
+    title:'タクシー・Uber', sub:'目的地と道案内',
+    situation:'📍 場面: ニューヨーク市内',
+    desc:'Uberに乗ったら運転手が目的地を間違えた方向に向かっている。撮影時間が迫っている。なんとか修正してほしい。',
+    goal:'💡 目標: 道案内・訂正・急いでいることを英語で伝えよう',
+    phrases:[
+      {en:"I think you might be going the wrong way.", ja:"方向が違うかもしれません。", note:"I think you might... は相手を責めずやんわり指摘する言い方。"},
+      {en:"I'm actually headed to Midtown, not Downtown.", ja:"実はダウンタウンではなくミッドタウンに向かっています。", note:"actually は「実は」。訂正するときに自然に使える。"},
+      {en:"I'm running a bit late, could you take the faster route?", ja:"少し遅れているので、速いルートで行ってもらえますか？", note:"running late で「遅れている」。ビジネスでも日常でも超頻出。"},
+      {en:"Could you drop me off at the corner?", ja:"角のところで降ろしてもらえますか？", note:"drop me off で「降ろす」。タクシーで必須フレーズ。"},
+      {en:"How long do you think it'll take from here?", ja:"ここからどのくらいかかりますか？", note:"How long do you think...? は推測を丁寧に聞く言い方。"},
+    ],
+    chatSys:'You are an Uber driver in New York City. The user is a Japanese TV producer who realizes you are going the wrong direction. You made an honest mistake. Be apologetic and helpful. Keep responses short. After each response add one tip in Japanese starting with 💡.',
+    chatStart:"Hey, how's it going? You're going to... let me check... 5th Avenue, right?"
+  },
+  {
+    id:'s05', cat:'travel', icon:'🏥',
+    title:'体調不良・病院', sub:'症状を説明する',
+    situation:'📍 場面: 海外ロケ先の病院',
+    desc:'ロケ中にスタッフが体調を崩した。一緒に病院に行き、医師に症状を英語で説明しなければならない。',
+    goal:'💡 目標: 症状・痛みの場所・程度を英語で正確に伝えよう',
+    phrases:[
+      {en:"He's been feeling nauseous since this morning.", ja:"今朝から吐き気がします。", note:"He's been feeling...since は「〜からずっと」。症状の継続を伝える。"},
+      {en:"He has a sharp pain in his stomach.", ja:"お腹に鋭い痛みがあります。", note:"sharp pain で「鋭い痛み」。dull pain は「鈍い痛み」。"},
+      {en:"On a scale of one to ten, the pain is about a seven.", ja:"10段階で言うと7くらいの痛みです。", note:"医師がよく使う質問。先に答えられると話が早い。"},
+      {en:"He hasn't eaten anything since last night.", ja:"昨夜から何も食べていません。", note:"hasn't eaten since... で「〜から食べていない」。"},
+      {en:"Is it anything serious?", ja:"何か深刻なことですか？", note:"シンプルだが大事なフレーズ。serious/contagious（感染する）なども覚えておくと便利。"},
+    ],
+    chatSys:'You are a doctor at a clinic. The user is a Japanese TV producer bringing in a sick colleague. Ask questions about symptoms professionally but kindly. Keep responses short. After each response add one tip in Japanese starting with 💡.',
+    chatStart:"Good afternoon. I'm Dr. Smith. So, what brings you in today?"
+  },
+  {
+    id:'s06', cat:'travel', icon:'🛍️',
+    title:'ショッピング・値交渉', sub:'購入・返品・交渉',
+    situation:'📍 場面: ニューヨークのブランドショップ',
+    desc:'番組の小道具として使いたいものを見つけたが、少し高い。試着もしたいし、番組用に使う旨を伝えて割引も交渉してみたい。',
+    goal:'💡 目標: 試着・サイズ確認・値引き交渉を英語でやってみよう',
+    phrases:[
+      {en:"Could I try this on?", ja:"これを試着してもいいですか？", note:"try on は「試着する」。最もシンプルで自然な聞き方。"},
+      {en:"Do you have this in a medium?", ja:"これのMサイズはありますか？", note:"Do you have this in...? に色やサイズを入れるだけで使える万能フレーズ。"},
+      {en:"Is this the best price you can do?", ja:"これ以上安くなりませんか？", note:"値引き交渉の定番。直接 Can you discount? より自然でソフト。"},
+      {en:"We're filming a TV show and might feature your store.", ja:"テレビ番組を撮影していて、お店を紹介できるかもしれません。", note:"交渉カード。feature は「特集する・取り上げる」。"},
+      {en:"I'll take it.", ja:"これにします。", note:"購入決定の一言。シンプルだが自信を持って言えると格好いい。"},
+    ],
+    chatSys:'You are a sales associate at a boutique in New York. The user is a Japanese TV producer interested in buying something. Be friendly and helpful. If they mention TV, be excited. Keep responses short. After each response add one tip in Japanese starting with 💡.',
+    chatStart:"Hi there! Welcome in. Is there anything I can help you find today?"
+  },
+  {
+    id:'s07', cat:'travel', icon:'🗺️',
+    title:'道に迷う', sub:'道を聞く・案内してもらう',
+    situation:'📍 場面: ロンドンの街角',
+    desc:'ロケハン中に迷子になった。スマホのバッテリーも切れかけ。地元の人に道を聞いて、なんとか目的地にたどり着かないといけない。',
+    goal:'💡 目標: 道を尋ねて、英語の道案内を聞き取り、お礼を言おう',
+    phrases:[
+      {en:"Excuse me, I'm a bit lost. Could you help me?", ja:"すみません、少し迷ってしまって。助けてもらえますか？", note:"いきなり道を聞かず、まず声をかけてから。"},
+      {en:"How do I get to the Tate Modern from here?", ja:"ここからテート・モダンへはどう行けばいいですか？", note:"How do I get to...? は道を聞く定番フレーズ。"},
+      {en:"Sorry, could you say that again more slowly?", ja:"すみません、もう少しゆっくり言ってもらえますか？", note:"聞き取れなかったときの最重要フレーズ。恥ずかしがらず使おう。"},
+      {en:"Is it within walking distance?", ja:"歩いて行ける距離ですか？", note:"within walking distance で「徒歩圏内」。"},
+      {en:"Thank you so much, you're a lifesaver!", ja:"ありがとうございます、助かりました！", note:"you're a lifesaver は「命の恩人！」。大げさだがネイティブがよく使う感謝表現。"},
+    ],
+    chatSys:'You are a friendly local in London. The user is a Japanese TV producer who is lost and needs directions to a famous landmark. Give directions naturally, not too fast. After each response add one tip in Japanese starting with 💡.',
+    chatStart:"Oh hello! You look a bit lost — are you alright? Can I help?"
+  },
+  {
+    id:'s08', cat:'travel', icon:'🛂',
+    title:'入国審査', sub:'目的・滞在期間の説明',
+    situation:'📍 場面: ロサンゼルス国際空港 入国審査',
+    desc:'ロケのためにアメリカに入国。審査官に目的・滞在先・仕事内容を英語で答えなければならない。',
+    goal:'💡 目標: 入国審査で聞かれることをすべて英語で答えられるようにしよう',
+    phrases:[
+      {en:"I'm here for a TV production project.", ja:"テレビの制作プロジェクトで来ました。", note:"入国目的を一言で。for business / for sightseeing / for a conference など入れ替えて使える。"},
+      {en:"I'll be staying for about ten days.", ja:"約10日間滞在する予定です。", note:"about をつけると少し曖昧でも大丈夫。"},
+      {en:"I'm staying at the Marriott in downtown LA.", ja:"ダウンタウンLAのマリオットに泊まります。", note:"ホテル名と場所をセットで答えると印象が良い。"},
+      {en:"I work as a TV producer at a Japanese broadcasting company.", ja:"日本の放送会社でテレビプロデューサーをしています。", note:"職業を説明する基本形。I work as a... が自然。"},
+      {en:"I have a return ticket for the fifteenth.", ja:"15日の帰りのチケットを持っています。", note:"return ticket は往復の帰り便。round trip ticket とも言う。"},
+    ],
+    chatSys:'You are a US immigration officer at LAX. Ask standard immigration questions professionally but not aggressively. The user is a Japanese TV producer. Keep responses short and realistic. After each response add one tip in Japanese starting with 💡.',
+    chatStart:"Next. Good afternoon. Passport please. What's the purpose of your visit?"
+  },
+  {
+    id:'s09', cat:'daily', icon:'☕',
+    title:'カフェで注文', sub:'カスタマイズ・注文の変更',
+    situation:'📍 場面: ニューヨークのスターバックス',
+    desc:'朝のコーヒータイム。複雑なカスタマイズ注文をして、名前を聞かれて答えるまでの流れ。',
+    goal:'💡 目標: カフェでの注文をスムーズに、自信を持ってできるようにしよう',
+    phrases:[
+      {en:"Can I get a large iced latte with oat milk?", ja:"オーツミルクのアイスラテのラージをください。", note:"Can I get...? はカフェ注文の最もカジュアルな言い方。"},
+      {en:"Could you make that a bit less sweet?", ja:"少し甘さ控えめにしてもらえますか？", note:"less sweet で「甘さ控えめ」。extra sweet は「甘め」。"},
+      {en:"Actually, can I add an extra shot?", ja:"あと、エスプレッソを一杯追加してもらえますか？", note:"Actually, can I... で「やっぱり〜も」と追加注文するときに便利。"},
+      {en:"Is that for here or to go?", ja:"店内ですか、お持ち帰りですか？", note:"よく聞かれる質問。For here. / To go. だけでOK。"},
+      {en:"Sorry, could you repeat the total?", ja:"すみません、合計をもう一度言ってもらえますか？", note:"金額が聞き取れなかったときに。repeat the total で合計金額の確認。"},
+    ],
+    chatSys:'You are a friendly barista at a coffee shop in New York. The user is a Japanese TV producer ordering coffee. Be upbeat and helpful. Keep responses short and natural. After each response add one tip in Japanese starting with 💡.',
+    chatStart:"Hey, welcome! What can I get started for you today?"
+  },
+  {
+    id:'s10', cat:'daily', icon:'🏋️',
+    title:'ジムで話す', sub:'フィットネス・健康の会話',
+    situation:'📍 場面: ホテルのジム',
+    desc:'海外滞在中、ホテルのジムで地元の人と自然に会話が始まった。ゴルフもやるしフィットネスも興味がある。',
+    goal:'💡 目標: 健康・運動についての日常英会話を気軽にできるようになろう',
+    phrases:[
+      {en:"Do you come here often?", ja:"よくここに来ますか？", note:"ジムだけでなく「ここによく来る？」という万能な会話の切り出し方。"},
+      {en:"I'm trying to get back in shape.", ja:"体を取り戻そうとしています。", note:"get in shape で「体を鍛える」。get back in shape で「戻す」ニュアンス。"},
+      {en:"I've been so busy lately, I haven't had time to work out.", ja:"最近忙しくて、運動する時間がありませんでした。", note:"I've been so busy lately は日常でめちゃくちゃよく使う。"},
+      {en:"I play golf, so I try to keep my core strong.", ja:"ゴルフをするので、体幹を維持するようにしています。", note:"so I try to... で「だから〜するようにしている」という自然なつなぎ。"},
+      {en:"Any tips for someone just getting back into it?", ja:"久しぶりに始める人へのアドバイスはありますか？", note:"Any tips for...? はアドバイスを求める自然なフレーズ。"},
+    ],
+    chatSys:'You are a friendly gym-goer at a hotel gym. The user is a Japanese TV producer who is also a golfer. Have a casual fitness conversation. Be encouraging. After each response add one tip in Japanese starting with 💡.',
+    chatStart:"Morning! You're up early. First time at this gym?"
+  },
+  {
+    id:'s11', cat:'daily', icon:'🍺',
+    title:'バーで話す', sub:'初対面の会話・友達作り',
+    situation:'📍 場面: 海外のバー',
+    desc:'ひとりでバーに入ったら隣の席の人が話しかけてきた。仕事・出身・趣味など初対面トークをしながら楽しく会話したい。',
+    goal:'💡 目標: 初対面の人と自然に会話を続けられるフレーズを身につけよう',
+    phrases:[
+      {en:"I'm here on a work trip. I work in television.", ja:"出張で来ています。テレビの仕事をしています。", note:"I work in television は「テレビ業界で働いている」。in の後に業界名を入れる。"},
+      {en:"I'm actually from Tokyo. Have you ever been?", ja:"実は東京出身です。行ったことありますか？", note:"Have you ever been? は相手の経験を聞く超頻出フレーズ。"},
+      {en:"That's so interesting! Tell me more.", ja:"それは面白いですね！もっと教えてください。", note:"会話を続けるための魔法フレーズ。相手が気持ちよく話してくれる。"},
+      {en:"What do you do for fun around here?", ja:"この辺りで楽しみにしていることは何ですか？", note:"地元のおすすめを聞く自然な言い方。What do you do for fun? で趣味を聞くことも。"},
+      {en:"It was great meeting you. Let's keep in touch.", ja:"会えてよかったです。また連絡しましょう。", note:"別れ際の定番。keep in touch で「連絡を取り合う」。"},
+    ],
+    chatSys:'You are a friendly local at a bar who strikes up a conversation. The user is a Japanese TV producer traveling for work. Be curious about Japan and their job. Keep it casual and fun. After each response add one tip in Japanese starting with 💡.',
+    chatStart:"Hey, you look like you're traveling. Am I right? Where you from?"
+  },
+  {
+    id:'s12', cat:'daily', icon:'🏠',
+    title:'Airbnbのホスト', sub:'滞在中の問題・お礼',
+    situation:'📍 場面: 海外のAirbnb',
+    desc:'Airbnbに泊まったらWi-Fiが繋がらない。ホストに連絡して問題を解決してもらいつつ、滞在のお礼も言いたい。',
+    goal:'💡 目標: トラブルを穏やかに伝えて解決を求めるフレーズを覚えよう',
+    phrases:[
+      {en:"I'm having a bit of trouble with the Wi-Fi.", ja:"Wi-Fiで少し問題があります。", note:"I'm having trouble with... で「〜で困っています」。a bit をつけると柔らかくなる。"},
+      {en:"I've tried restarting my device but it doesn't seem to help.", ja:"端末を再起動してみましたが、うまくいかないようです。", note:"すでに試したことを先に言うと、相手への配慮になる。"},
+      {en:"Is there a password I might be missing?", ja:"何かパスワードを見逃しているかもしれません。", note:"I might be missing は「見落としているかもしれない」。謙虚な聞き方。"},
+      {en:"The place is absolutely lovely, by the way.", ja:"ところで、本当に素敵な場所ですね。", note:"by the way で話題転換。クレームだけでなく褒め言葉も入れると関係が良くなる。"},
+      {en:"I'll definitely leave you a five-star review.", ja:"絶対に5つ星のレビューを書きます。", note:"Airbnbでホストが喜ぶ一言。definitely で誠実さが伝わる。"},
+    ],
+    chatSys:'You are an Airbnb host. The user is a Japanese TV producer staying at your place who has a Wi-Fi issue. Be friendly and helpful, try to resolve the issue. After each response add one tip in Japanese starting with 💡.',
+    chatStart:"Hey! Hope you settled in okay. How's everything so far?"
+  },
+  {
+    id:'s13', cat:'daily', icon:'📱',
+    title:'電話・ビデオ通話', sub:'聞き返し・確認',
+    situation:'📍 場面: 海外クライアントとのZoom会議',
+    desc:'英語でのZoom会議中、相手の言っていることが聞き取れない。失礼にならないよう聞き返したり、確認したりしながら会議を進める。',
+    goal:'💡 目標: オンライン会議で聞き取れないときの対処フレーズを身につけよう',
+    phrases:[
+      {en:"Sorry, could you repeat that? I think I missed part of it.", ja:"すみません、もう一度言ってもらえますか？一部聞き取れませんでした。", note:"I missed part of it で「一部聞き取れなかった」。正直に言うほうが信頼される。"},
+      {en:"Your audio is cutting in and out a bit.", ja:"音声が少し途切れ途切れになっています。", note:"cut in and out で「途切れる」。技術トラブルのせいにすると楽。"},
+      {en:"Just to confirm, you're saying the deadline is the fifteenth?", ja:"確認ですが、締め切りは15日ということですか？", note:"Just to confirm, you're saying... で「確認ですが」。重要事項の確認に必須。"},
+      {en:"Could you send me that in an email afterwards?", ja:"後でメールで送ってもらえますか？", note:"言った言わないを防ぐための実用フレーズ。"},
+      {en:"I'll follow up with you on that.", ja:"それについてまた連絡します。", note:"follow up で「フォローアップ・確認連絡する」。ビジネスで超頻出。"},
+    ],
+    chatSys:'You are an English-speaking client on a Zoom call with a Japanese TV producer. Discuss a project timeline. Occasionally speak quickly or unclearly to give the user practice asking for repetition. After each response add one tip in Japanese starting with 💡.',
+    chatStart:"Great, everyone's here. So, let's jump right in — I wanted to discuss the project schedule for next quarter."
+  },
+  {
+    id:'s14', cat:'daily', icon:'🤝',
+    title:'初対面のビジネス挨拶', sub:'名刺交換・自己紹介',
+    situation:'📍 場面: 海外の業界イベント',
+    desc:'国際的な映像コンテンツのイベントで外国のバイヤーやプロデューサーと名刺交換。自分の仕事・番組について英語で紹介する。',
+    goal:'💡 目標: 自分の仕事を英語で自信を持って紹介できるようになろう',
+    phrases:[
+      {en:"Hi, I'm Hayato, a TV producer from Japan.", ja:"こんにちは、日本からきたテレビプロデューサーのハヤトです。", note:"名前＋職業＋出身地で自己紹介は完璧。シンプルで覚えやすい。"},
+      {en:"I produce variety shows and documentary content.", ja:"バラエティ番組とドキュメンタリーコンテンツを制作しています。", note:"I produce... で具体的に伝える。何を作っているか一言で言えると強い。"},
+      {en:"We actually just launched a new golf talk show.", ja:"実はゴルフのトーク番組を始めたところです。", note:"actually で「実は」。新しい話題を自然に切り出せる。"},
+      {en:"I'd love to explore some collaboration opportunities.", ja:"コラボレーションの可能性について探れたらと思っています。", note:"I'd love to explore... は「ぜひ〜してみたい」という丁寧な提案。"},
+      {en:"Could I get your card? I'll be in touch.", ja:"名刺をいただけますか？またご連絡します。", note:"Could I get your card? は名刺をもらうシンプルな言い方。"},
+    ],
+    chatSys:'You are an international TV buyer or producer at a content market event. The user is a Japanese TV producer. Be friendly and interested in their work. After each response add one tip in Japanese starting with 💡.',
+    chatStart:"Oh hello! First time at this event? I'm Sarah, from a production company in London."
+  },
+  {
+    id:'s15', cat:'daily', icon:'😤',
+    title:'クレームを伝える', sub:'不満を丁寧に主張する',
+    situation:'📍 場面: 海外のレストランやサービス',
+    desc:'料理が頼んだものと違う、または待ちすぎている。感情的にならず、丁寧だが明確に問題を伝えて解決を求める。',
+    goal:'💡 目標: 不満や問題を英語で穏やかに、でも確実に伝えるフレーズを学ぼう',
+    phrases:[
+      {en:"Excuse me, I think there might be a mix-up with my order.", ja:"すみません、注文が間違っているようです。", note:"there might be a mix-up で「間違いがあったかも」。責めず状況を伝える。"},
+      {en:"I ordered the steak, not the pasta.", ja:"私はステーキを頼みました、パスタではありません。", note:"シンプルに事実を言う。not the... で「〜ではなく」と明確に。"},
+      {en:"We've been waiting for about forty minutes now.", ja:"もう約40分待っています。", note:"We've been waiting for... はクレームでも日常でも使う現在完了進行形。"},
+      {en:"I don't want to make a fuss, but this isn't what I expected.", ja:"大げさにしたくないのですが、期待通りではありませんでした。", note:"I don't want to make a fuss で「騒ぎたいわけじゃないけど」。穏やかなクレームに最適。"},
+      {en:"I'd appreciate it if you could sort this out.", ja:"解決していただけるとありがたいです。", note:"I'd appreciate it if you could... は丁寧なお願いの最高フレーズ。"},
+    ],
+    chatSys:'You are a restaurant manager dealing with a customer complaint. The user is a Japanese TV producer who has received the wrong order and has been waiting too long. Be apologetic and try to resolve it. After each response add one tip in Japanese starting with 💡.',
+    chatStart:"Is everything alright over here? Can I help you with something?"
+  },
+  {
+    id:'s16', cat:'tv', icon:'🎬',
+    title:'外国人タレントの対応', sub:'撮影現場でのディレクション',
+    situation:'📍 場面: 撮影現場',
+    desc:'外国人ゲストタレントが撮影の流れを理解できていない。カメラの前での立ち位置・段取り・NGを英語で伝えなければならない。',
+    goal:'💡 目標: 撮影現場で外国人タレントに指示・説明できるフレーズを身につけよう',
+    phrases:[
+      {en:"Could you stand just a little to your left?", ja:"もう少し左に立ってもらえますか？", note:"just a little で「ほんの少し」。撮影現場の微調整に使える。"},
+      {en:"We'd like you to speak directly into this camera.", ja:"このカメラに向かって話してもらえますか？", note:"speak directly into... で「〜に向かって話す」。"},
+      {en:"Don't worry, it's just a rehearsal. Take your time.", ja:"大丈夫です、リハーサルなので。ゆっくりどうぞ。", note:"Take your time. はプレッシャーを和らげる魔法の一言。"},
+      {en:"We'll do one more take. You're doing great.", ja:"もう一度撮ります。すごく良いですよ。", note:"You're doing great! は現場の雰囲気を良くする。one more take で「もう一回」。"},
+      {en:"That's a wrap for today. Thank you so much.", ja:"今日はここまでです。本当にありがとうございました。", note:"That's a wrap! は撮影終了の定番フレーズ。"},
+    ],
+    chatSys:'You are a foreign talent/actor on a Japanese TV shoot. The user is a Japanese TV producer giving you direction in English. Be cooperative but sometimes ask for clarification. After each response add one tip in Japanese starting with 💡.',
+    chatStart:"Hi! I'm Marcus. I'm really excited to be here. So, what would you like me to do first?"
+  },
+  {
+    id:'s17', cat:'tv', icon:'📋',
+    title:'番組ピッチ', sub:'企画を英語で説明する',
+    situation:'📍 場面: 国際コンテンツ見本市',
+    desc:'海外のバイヤーに新しいゴルフトーク番組を英語でプレゼン。面白さを伝えて、共同制作や販売の可能性を探りたい。',
+    goal:'💡 目標: 番組の企画を英語で魅力的に説明できるようになろう',
+    phrases:[
+      {en:"The concept is a golf talk show featuring legends of Japanese golf.", ja:"コンセプトは日本ゴルフのレジェンドが登場するトーク番組です。", note:"The concept is... でピッチ開始。シンプルで明快な始め方。"},
+      {en:"It's a blend of nostalgia and humor, appealing to all ages.", ja:"懐かしさとユーモアを融合させた、全年齢対象の内容です。", note:"a blend of A and B で「AとBを融合した」。番組説明に使えるフレーズ。"},
+      {en:"We've already secured some big names for the show.", ja:"すでに番組の大物ゲストを確保しています。", note:"secured は「確保した」。交渉済みというニュアンスで信頼感が出る。"},
+      {en:"We're open to co-production arrangements.", ja:"共同制作の形も検討しています。", note:"open to は「〜に前向きで」。ビジネス交渉で使える柔軟な言い方。"},
+      {en:"I'd love to send you a pitch deck. What's the best email?", ja:"企画書をお送りしたいのですが、メールアドレスを教えていただけますか？", note:"pitch deck は企画プレゼン資料。What's the best email? は自然な聞き方。"},
+    ],
+    chatSys:'You are an international TV buyer interested in Japanese content. The user is pitching a golf talk show. Ask questions about ratings, format, and distribution. After each response add one tip in Japanese starting with 💡.',
+    chatStart:"So I heard you have an interesting show to pitch. Tell me about it — what's the concept?"
+  },
+  {
+    id:'s18', cat:'tv', icon:'🎙️',
+    title:'外国人へのインタビュー', sub:'取材・ドキュメンタリー',
+    situation:'📍 場面: ドキュメンタリーの取材',
+    desc:'外国人へのインタビュー取材。自然な流れで質問して、相手が話しやすい雰囲気を作りながら撮影を進める。',
+    goal:'💡 目標: インタビュー取材で使える質問・相槌・深掘りフレーズを身につけよう',
+    phrases:[
+      {en:"Could you tell me a little about yourself and what you do?", ja:"ご自身のことと、お仕事について少し教えていただけますか？", note:"インタビュー開始の定番。tell me about yourself は万能。"},
+      {en:"That's really interesting. Can you elaborate on that?", ja:"それは面白いですね。もう少し詳しく話してもらえますか？", note:"elaborate on that で「もう少し詳しく」。インタビューで深掘りするときに使う。"},
+      {en:"How did you first get into this field?", ja:"この分野に入ったきっかけは何ですか？", note:"How did you first get into...? は経緯を聞く自然な質問。"},
+      {en:"What would you say is the biggest challenge you've faced?", ja:"これまで直面した最大の挑戦は何でしょうか？", note:"What would you say...? で「あなたに言わせれば」というニュアンス。答えやすくなる。"},
+      {en:"Is there anything else you'd like to add?", ja:"何か付け加えたいことはありますか？", note:"インタビュー締めの定番。相手に最後のチャンスを与える。"},
+    ],
+    chatSys:'You are someone being interviewed for a Japanese TV documentary. The user is the interviewer/producer. Be open and share interesting stories. After each response add one tip in Japanese starting with 💡.',
+    chatStart:"Sure, I'm happy to be interviewed! What would you like to know?"
+  },
+  {
+    id:'s19', cat:'golf', icon:'⛳',
+    title:'ゴルフ場でキャディと話す', sub:'コース攻略・クラブ選択',
+    situation:'📍 場面: ハワイのゴルフコース',
+    desc:'海外のゴルフコースでキャディと一緒にラウンド。コースの特徴を聞いて、クラブ選択やコース攻略についてアドバイスをもらう。',
+    goal:'💡 目標: ゴルフコースでキャディと英語で会話できるようになろう',
+    phrases:[
+      {en:"What do you recommend for this hole?", ja:"このホールではどのクラブが良いですか？", note:"What do you recommend? は幅広く使える。for this hole でゴルフ場面に。"},
+      {en:"How far is it to the pin from here?", ja:"ここからピンまでどのくらいですか？", note:"pin はグリーンの旗。How far to the pin? は最頻出の質問。"},
+      {en:"The wind seems to be coming from the left.", ja:"風は左から来ているようです。", note:"seem to be... で「〜のようだ」。断言せず柔らかく言う表現。"},
+      {en:"I tend to fade the ball, so I'll aim a bit left.", ja:"私はフェードが多いので、少し左を狙います。", note:"tend to fade/draw で球筋の傾向を説明できる。"},
+      {en:"That was a great read. You know this course well.", ja:"素晴らしい読みですね。このコースをよく知っていますね。", note:"キャディへの褒め言葉。read はグリーンの読み。"},
+    ],
+    chatSys:'You are an experienced caddy at a golf course in Hawaii. The user is a Japanese golfer and TV producer. Give realistic golf advice and course information. After each response add one tip in Japanese starting with 💡.',
+    chatStart:"Good morning! Welcome to the course. Beautiful day for golf. Which tee box would you like to play from today?"
+  },
+  {
+    id:'s20', cat:'golf', icon:'🏌️',
+    title:'ゴルフ仲間との雑談', sub:'ラウンド中の会話',
+    situation:'📍 場面: 海外ゴルフコース',
+    desc:'外国人ゴルファーと一緒にラウンド。プレー中の雑談、お互いのゲームについて話しながら自然に打ち解ける。',
+    goal:'💡 目標: ゴルフ好き同士で楽しく英語で会話できるようになろう',
+    phrases:[
+      {en:"Great shot! That must be at least two hundred and fifty yards.", ja:"ナイスショット！少なくとも250ヤードはあるんじゃないですか。", note:"Great shot! はゴルフの最重要褒め言葉。ナイスショットより自然。"},
+      {en:"I've been working on my short game lately.", ja:"最近はアプローチを練習しています。", note:"short game はアプローチ・パット。long game はドライバー系。"},
+      {en:"I'm about a ten handicap, but it's not consistent.", ja:"ハンデは10くらいですが、安定していません。", note:"ゴルファー同士では必ずと言っていいほど聞かれる。"},
+      {en:"Do you play much golf back home?", ja:"地元ではよくゴルフをしますか？", note:"back home で「地元に帰ったら・地元では」。旅先での会話に使える。"},
+      {en:"We should play again sometime. I really enjoyed this round.", ja:"またいつかプレーしましょう。今日のラウンドは楽しかったです。", note:"締めの一言。enjoyed this round で「このラウンドを楽しんだ」。"},
+    ],
+    chatSys:'You are a friendly fellow golfer from another country. The user is a Japanese TV producer who also loves golf. Have a fun, casual conversation on the course about your games, handicaps, and golf experiences. After each response add one tip in Japanese starting with 💡.',
+    chatStart:"Nice to meet you! First time playing this course? It's a beauty, isn't it?"
+  },
+];
+
+// ========== STATE ==========
+let doneScenarios = JSON.parse(localStorage.getItem('hea_done')||'[]');
+let learnedPhrases = JSON.parse(localStorage.getItem('hea_phrases')||'[]');
+let currentScenario = null;
+let currentStep = 0; // 0=phrases, 1=shadowing, 2=chat
+let currentPhraseIdx = 0;
+let micTarget = null;
+let recognition = null;
+let apiKey = localStorage.getItem('hea_api')|| '';
+let chatMsgs = [];
+let currentCat = 'all';
+
+// ========== HOME ==========
+function filterCat(el, cat) {
+  currentCat = cat;
+  document.querySelectorAll('.cat-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  renderList();
+}
+
+function renderList() {
+  const list = document.getElementById('scenario-list');
+  const filtered = currentCat === 'all' ? SCENARIOS : SCENARIOS.filter(s => s.cat === currentCat);
+  list.innerHTML = filtered.map(s => {
+    const done = doneScenarios.includes(s.id);
+    const badgeClass = s.cat;
+    const badgeText = {travel:'✈️ 旅行', daily:'☀️ 日常', tv:'🎬 TV', golf:'⛳ ゴルフ'}[s.cat];
+    return `<div class="scenario-card" onclick="openScenario('${s.id}')">
+      <div class="sc-icon">${s.icon}</div>
+      <div class="sc-text">
+        <div class="sc-title">${s.title}</div>
+        <div class="sc-sub">${s.sub}</div>
+      </div>
+      <span class="sc-badge ${badgeClass}">${badgeText}</span>
+      ${done ? '<div class="sc-done">✅</div>' : ''}
+    </div>`;
+  }).join('');
+}
+
+function updateHome() {
+  document.getElementById('h-done').textContent = doneScenarios.length;
+  document.getElementById('h-phrases').textContent = learnedPhrases.length;
+  const streak = parseInt(localStorage.getItem('hea_streak')||'0');
+  document.getElementById('h-streak').textContent = streak;
+}
+
+// ========== NAVIGATION ==========
+function go(id) {
+  stopSpeech(); stopMic();
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if(id === 'home') { updateHome(); renderList(); }
+}
+
+function openScenario(id) {
+  currentScenario = SCENARIOS.find(s => s.id === id);
+  currentStep = 0;
+  currentPhraseIdx = 0;
+  document.getElementById('detail-title').textContent = currentScenario.title;
+  document.getElementById('detail-situation').textContent = currentScenario.situation;
+  document.getElementById('detail-desc').textContent = currentScenario.desc;
+  document.getElementById('detail-goal').textContent = currentScenario.goal;
+  go('detail');
+  renderStep();
+}
+
+// ========== STEPS ==========
+function renderStep() {
+  updateStepIndicator();
+  if(currentStep === 0) renderPhraseStep();
+  else if(currentStep === 1) renderShadowStep();
+  else if(currentStep === 2) renderChatStep();
+}
+
+function updateStepIndicator() {
+  const steps = ['フレーズ学習', 'シャドーイング', 'AI会話'];
+  const ind = document.getElementById('step-indicator');
+  ind.innerHTML = steps.map((s,i) => {
+    let cls = i < currentStep ? 'done' : i === currentStep ? 'active' : '';
+    return `<div class="step-dot ${cls}"></div>`;
+  }).join('') + `<span class="step-label">STEP ${currentStep+1}/3: ${steps[currentStep]}</span>`;
+}
+
+// STEP 1: Phrase learning
+function renderPhraseStep() {
+  const p = currentScenario.phrases[currentPhraseIdx];
+  const total = currentScenario.phrases.length;
+  const content = document.getElementById('step-content');
+  content.innerHTML = `
+    <div class="prog-bar"><div class="prog-fill" id="ph-prog" style="width:${Math.round((currentPhraseIdx+1)/total*100)}%"></div></div>
+    <div class="prog-label">${currentPhraseIdx+1} / ${total} フレーズ</div>
+    <div class="phrase-card">
+      <div class="ph-situation">${p.note}</div>
+      <div class="ph-en" id="ph-en">${p.en}</div>
+      <div class="ph-ja">${p.ja}</div>
+      <div class="ph-ex">"${p.ex}"</div>
+    </div>
+    <div class="tts-row">
+      <button class="btn-audio" onclick="speakText('${esc(p.en)}', 0.9)">🔊 ネイティブ速度</button>
+      <button class="btn-audio" onclick="speakText('${esc(p.en)}', 0.65)">🐢 ゆっくり</button>
+    </div>
+    <div class="mic-area">
+      <button class="mic-main idle" id="ph-mic" onclick="toggleMic('phrase')">🎤</button>
+      <div class="mic-hint">タップして発音チェック</div>
+      <div class="mic-status" id="ph-status"></div>
+    </div>
+    <div id="ph-result-display"></div>
+    <div class="btn-row" style="margin-top:0.5rem;">
+      ${currentPhraseIdx > 0 ? '<button class="btn btn-secondary" onclick="prevPhrase()">← 戻る</button>' : ''}
+      ${currentPhraseIdx < total-1
+        ? '<button class="btn btn-primary" onclick="nextPhrase()">次のフレーズ →</button>'
+        : '<button class="btn btn-ok" onclick="goToShadow()">シャドーイングへ ▶</button>'
+      }
+    </div>
+  `;
+}
+
+function esc(s){ return s.replace(/'/g,"\\'").replace(/"/g,'&quot;'); }
+
+function prevPhrase() {
+  if(currentPhraseIdx > 0) { currentPhraseIdx--; renderPhraseStep(); }
+}
+function nextPhrase() {
+  currentPhraseIdx++;
+  renderPhraseStep();
+  // auto-speak
+  setTimeout(()=>{ speakText(currentScenario.phrases[currentPhraseIdx].en, 0.9); }, 300);
+}
+function goToShadow() { currentStep=1; currentPhraseIdx=0; renderStep(); }
+
+// STEP 2: Shadowing
+function renderShadowStep() {
+  const p = currentScenario.phrases[currentPhraseIdx];
+  const total = currentScenario.phrases.length;
+  const content = document.getElementById('step-content');
+  content.innerHTML = `
+    <div class="prog-bar"><div class="prog-fill" id="sh-prog" style="width:${Math.round((currentPhraseIdx+1)/total*100)}%"></div></div>
+    <div class="prog-label">${currentPhraseIdx+1} / ${total} フレーズ</div>
+    <div class="phrase-card">
+      <div class="ph-en">${p.en}</div>
+      <div class="ph-ja">${p.ja}</div>
+    </div>
+    <div class="tts-row">
+      <button class="btn-audio" onclick="speakText('${esc(p.en)}', 0.9)">🔊 聞く</button>
+      <button class="btn-audio" onclick="speakText('${esc(p.en)}', 0.65)">🐢 ゆっくり</button>
+    </div>
+    <div class="mic-area">
+      <button class="mic-main idle" id="sh-mic" onclick="toggleMic('shadow')">🎤</button>
+      <div class="mic-hint">聞いてすぐ繰り返してください</div>
+      <div class="mic-status" id="sh-status"></div>
+    </div>
+    <div id="sh-result-display"></div>
+    <div class="btn-row" style="margin-top:0.5rem;">
+      <button class="btn btn-ng" onclick="shadowResult(false)">✗ もう一度</button>
+      <button class="btn btn-skip" onclick="shadowNext()">スキップ</button>
+      <button class="btn btn-ok" onclick="shadowResult(true)">✓ OK！</button>
+    </div>
+  `;
+  setTimeout(()=>{ speakText(p.en, 0.9); }, 400);
+}
+
+function shadowResult(ok) {
+  if(ok && !learnedPhrases.includes(currentScenario.phrases[currentPhraseIdx].en)) {
+    learnedPhrases.push(currentScenario.phrases[currentPhraseIdx].en);
+    localStorage.setItem('hea_phrases', JSON.stringify(learnedPhrases));
+  }
+  shadowNext();
+}
+function shadowNext() {
+  stopMic();
+  if(currentPhraseIdx < currentScenario.phrases.length - 1) {
+    currentPhraseIdx++;
+    renderShadowStep();
+  } else {
+    currentStep = 2;
+    renderStep();
+  }
+}
+
+// STEP 3: Chat
+function renderChatStep() {
+  const content = document.getElementById('step-content');
+  if(!apiKey) {
+    content.innerHTML = `
+      <div class="api-box">
+        <h3>🔑 Claude APIキーを設定</h3>
+        <p>AI会話練習にはClaude APIキーが必要です。<br><a href="https://console.anthropic.com/" target="_blank" style="color:#1a73e8;">console.anthropic.com</a> で取得できます（無料枠あり）。</p>
+        <input type="password" id="api-inp" placeholder="sk-ant-..." />
+        <button class="save-btn" onclick="saveKey()">保存して会話を始める</button>
+      </div>
+      <button class="btn btn-secondary" onclick="skipChat()">スキップ（会話なしで完了）</button>
+    `;
+    return;
+  }
+  content.innerHTML = `
+    <div class="chat-scene-box">🎭 ${currentScenario.situation}<br>${currentScenario.desc}</div>
+    <div class="chat-history" id="chat-hist"></div>
+    <div class="chat-status" id="chat-status"></div>
+    <div class="chat-input-area">
+      <input type="text" id="chat-inp" placeholder="英語で入力 or マイクで話す..." onkeydown="if(event.key==='Enter')sendChat()"/>
+      <button class="mic-sm idle" id="chat-mic" onclick="toggleMic('chat')">🎤</button>
+      <button class="send-btn" onclick="sendChat()">→</button>
+    </div>
+    <div style="font-size:11px;color:#aaa;text-align:center;margin-top:6px;">AIの返答は自動で読み上げます</div>
+    <div class="btn-row" style="margin-top:1rem;">
+      <button class="btn btn-ok" onclick="completeScenario()">✓ 完了にする</button>
+    </div>
+  `;
+  chatMsgs = [];
+  const starter = currentScenario.chatStart;
+  chatMsgs.push({role:'assistant', content: starter});
+  addChatMsg('ai', starter);
+  setTimeout(()=>{ speakText(starter, 1.0); }, 300);
+}
+
+function saveKey() {
+  const k = document.getElementById('api-inp').value.trim();
+  if(!k) { alert('APIキーを入力してください'); return; }
+  apiKey = k;
+  localStorage.setItem('hea_api', k);
+  renderChatStep();
+}
+
+function skipChat() { completeScenario(); }
+
+function addChatMsg(role, text) {
+  const hist = document.getElementById('chat-hist');
+  if(!hist) return;
+  const el = document.createElement('div');
+  // split tip from main
+  if(role === 'ai' && text.includes('💡')) {
+    const parts = text.split('💡');
+    const mainEl = document.createElement('div');
+    mainEl.className = 'msg ai';
+    mainEl.textContent = parts[0].trim();
+    hist.appendChild(mainEl);
+    const tipEl = document.createElement('div');
+    tipEl.className = 'msg tip';
+    tipEl.textContent = '💡 ' + parts[1].trim();
+    hist.appendChild(tipEl);
+  } else {
+    el.className = 'msg ' + role;
+    el.textContent = text;
+    hist.appendChild(el);
+  }
+  hist.scrollTop = hist.scrollHeight;
+}
+
+async function sendChat() {
+  const inp = document.getElementById('chat-inp');
+  const text = inp.value.trim();
+  if(!text) return;
+  inp.value = '';
+  addChatMsg('user', text);
+  chatMsgs.push({role:'user', content:text});
+  document.getElementById('chat-status').textContent = 'AIが考え中...';
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01'},
+      body: JSON.stringify({
+        model:'claude-sonnet-4-6',
+        max_tokens:300,
+        system: currentScenario.chatSys,
+        messages: chatMsgs
+      })
+    });
+    const data = await res.json();
+    if(data.error) { document.getElementById('chat-status').textContent='エラー: '+data.error.message; return; }
+    const reply = data.content[0].text;
+    chatMsgs.push({role:'assistant', content:reply});
+    addChatMsg('ai', reply);
+    document.getElementById('chat-status').textContent = '';
+    const enPart = reply.split('💡')[0].trim();
+    speakText(enPart, 1.0);
+  } catch(e) {
+    document.getElementById('chat-status').textContent = '通信エラー。ネット接続を確認してください。';
+  }
+}
+
+function completeScenario() {
+  if(!doneScenarios.includes(currentScenario.id)) {
+    doneScenarios.push(currentScenario.id);
+    localStorage.setItem('hea_done', JSON.stringify(doneScenarios));
+  }
+  stopMic(); stopSpeech();
+  const content = document.getElementById('step-content');
+  content.innerHTML = `
+    <div class="complete-box">
+      <div class="complete-icon">🎉</div>
+      <div class="complete-title">シナリオ完了！</div>
+      <div class="complete-sub">「${currentScenario.title}」をクリアしました。<br>学んだフレーズは日常でも使ってみよう。</div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="go('home')">他のシナリオへ</button>
+      </div>
+    </div>
+  `;
+  updateStepIndicator();
+}
+
+// ========== TTS ==========
+function speakText(text, rate) {
+  stopSpeech();
+  if(!window.speechSynthesis) return;
+  const utt = new SpeechSynthesisUtterance(text);
+  utt.lang = 'en-US';
+  utt.rate = rate || 1.0;
+  const voices = speechSynthesis.getVoices();
+  const v = voices.find(v=>v.lang==='en-US'&&/google/i.test(v.name))
+    || voices.find(v=>v.lang==='en-US')
+    || voices.find(v=>v.lang.startsWith('en'));
+  if(v) utt.voice = v;
+  speechSynthesis.speak(utt);
+}
+function stopSpeech() { if(window.speechSynthesis) speechSynthesis.cancel(); }
+
+// ========== MIC ==========
+function setMicState(id, state) {
+  const btn = document.getElementById(id);
+  if(!btn) return;
+  const isSmall = btn.classList.contains('mic-sm');
+  btn.className = (isSmall ? 'mic-sm ' : 'mic-main ') + state;
+  btn.textContent = state === 'listening' ? '⏹' : '🎤';
+}
+
+function stopMic() {
+  if(recognition) { try{ recognition.stop(); }catch(e){} recognition = null; }
+  ['ph-mic','sh-mic','chat-mic'].forEach(id => setMicState(id,'idle'));
+  micTarget = null;
+}
+
+function toggleMic(target) {
+  if(micTarget === target && recognition) { stopMic(); return; }
+  stopMic();
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(!SR) { alert('音声認識はChromeで使えます。'); return; }
+  recognition = new SR();
+  recognition.lang = 'en-US';
+  recognition.continuous = false;
+  recognition.interimResults = true;
+  micTarget = target;
+  const micId = target==='phrase'?'ph-mic':target==='shadow'?'sh-mic':'chat-mic';
+  const statusId = target==='phrase'?'ph-status':target==='shadow'?'sh-status':'chat-status';
+  setMicState(micId, 'listening');
+  if(statusId && document.getElementById(statusId))
+    document.getElementById(statusId).textContent = '録音中... 英語で話してください';
+
+  recognition.onresult = e => {
+    let interim='', final='';
+    for(let i=e.resultIndex;i<e.results.length;i++){
+      if(e.results[i].isFinal) final+=e.results[i][0].transcript;
+      else interim+=e.results[i][0].transcript;
+    }
+    const text = final || interim;
+    if(target==='chat' && final) { document.getElementById('chat-inp').value=final; }
+    if(final) {
+      if(target==='phrase') checkPhrase(final);
+      else if(target==='shadow') checkShadow(final);
+      else if(target==='chat') { stopMic(); sendChat(); }
+    }
+  };
+  recognition.onerror = e => {
+    stopMic();
+    const msg = e.error==='not-allowed'
+      ? '⚠️ マイクの許可が必要です'
+      : '⚠️ エラー。もう一度お試しください';
+    const el = document.getElementById(statusId);
+    if(el) el.textContent = msg;
+  };
+  recognition.onend = () => { if(micTarget===target) stopMic(); };
+  try { recognition.start(); } catch(e) { stopMic(); }
+}
+
+function normalize(s){ return s.toLowerCase().replace(/[^a-z0-9 ]/g,'').trim(); }
+
+function checkPhrase(said) {
+  const p = currentScenario.phrases[currentPhraseIdx];
+  const target = normalize(p.en).split(' ');
+  const actual = normalize(said).split(' ');
+  const matched = target.filter(w=>actual.includes(w)).length;
+  const score = matched / target.length;
+  const el = document.getElementById('ph-result-display');
+  if(score >= 0.75) {
+    el.innerHTML = `<div class="result-display correct"><div class="result-icon">⭕</div><div class="result-text">すばらしい発音！</div><div class="result-said">あなた: "${said}"</div></div>`;
+  } else if(score >= 0.4) {
+    el.innerHTML = `<div class="result-display partial"><div class="result-icon">△</div><div class="result-text">もう少し！</div><div class="result-said">あなた: "${said}"</div><div class="result-answer">正解: "${p.en}"</div></div>`;
+  } else {
+    el.innerHTML = `<div class="result-display wrong"><div class="result-icon">✕</div><div class="result-text">もう一度チャレンジ</div><div class="result-said">あなた: "${said}"</div><div class="result-answer">正解: "${p.en}"</div></div>`;
+  }
+  setMicState('ph-mic','idle');
+}
+
+function checkShadow(said) {
+  const p = currentScenario.phrases[currentPhraseIdx];
+  const target = normalize(p.en).split(' ');
+  const actual = normalize(said).split(' ');
+  const matched = target.filter(w=>actual.includes(w)).length;
+  const score = matched / target.length;
+  const el = document.getElementById('sh-result-display');
+  if(!el) return;
+  if(score >= 0.75) {
+    el.innerHTML = `<div class="result-display correct"><div class="result-icon">⭕</div><div class="result-text">完璧！</div><div class="result-said">あなた: "${said}"</div></div>`;
+  } else if(score >= 0.4) {
+    el.innerHTML = `<div class="result-display partial"><div class="result-icon">△</div><div class="result-text">もう少し！</div><div class="result-answer">正解: "${p.en}"</div></div>`;
+  } else {
+    el.innerHTML = `<div class="result-display wrong"><div class="result-icon">✕</div><div class="result-text">もう一度</div><div class="result-answer">正解: "${p.en}"</div></div>`;
+  }
+  setMicState('sh-mic','idle');
+}
+
+// init
+if(window.speechSynthesis) speechSynthesis.onvoiceschanged = ()=>{};
+updateHome();
+renderList();
+</script>
+</body>
+</html>
